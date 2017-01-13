@@ -152,6 +152,9 @@ class configuration:
             rel['legacy'] = self._get_item(template, 'legacy', False)
             if rel['legacy'] is None:
                 rel['legacy'] = self._get_item(label, 'legacy', False)
+            rel['index_per_doc'] = self._get_item(template, 'index_per_doc', False)
+            if rel['index_per_doc'] is None:
+                rel['index_per_doc'] = self._get_item(label, 'index_per_doc', False)
             rel['html'] = self._get_item(label, 'html')
             rel['pdf'] = self._get_item(label, 'pdf')
             for d in rel['manuals'] + rel['supplements']:
@@ -183,7 +186,10 @@ class configuration:
             root.appendChild(heading)
 
             for m in rel['manuals']:
-                html = rel['html'] + '/' + m + '.html'
+                if 'index_per_doc' in rel:
+                    html = rel['html'] + '/' + m + '/index.html'
+                else:
+                    html = rel['html'] + '/' + m + '.html'
                 pdf = rel['pdf'] + '/' + m + '.pdf'
                 legacy = rel['legacy']
                 doc = self._xml_create_doc(cat, m, legacy, name, html, pdf)
@@ -204,7 +210,7 @@ class configuration:
             path = branch[1]
             tag = _branch_tag(branch)
             return \
-                '<script> loadCatalogue("%s/catalogue.xml", "%s", "%s", false); </script>\n' \
+                '<script> loadCatalogue("branches/%s/catalogue.xml", "branches/%s", "%s", false); </script>\n' \
                 % (path, path, tag)
 
         def _release_tag(release):
