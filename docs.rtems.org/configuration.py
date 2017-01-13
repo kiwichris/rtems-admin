@@ -75,9 +75,9 @@ class configuration:
         items = self._get_item(section, label, error)
         if items is None:
             return []
-        items = list(set([a.strip() for a in items.split(',')]))
+        items = [a.strip() for a in items.split(',')]
         if sort:
-            return sorted(items)
+            return sorted(set(items))
         else:
             return items
 
