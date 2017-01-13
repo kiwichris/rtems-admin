@@ -1,0 +1,69 @@
+   <!-- catalogues-top -->
+   <div class="container">
+    <div id="messages">
+    </div>
+    <div class="content">
+     <div id="content_inner">
+      <div class="jumbotron">
+       <h3>Welcome to the RTEMS Documentation Project</h3>
+        <p>RTEMS documentation is written
+        in <a href="http://docutils.sourceforge.net/rst.html">reStructuredText</a>
+        and built using the <a href="http://www.sphinx-doc.org/">Sphinx</a>
+        tools which are available for most host systems. The documentation
+        source is avaliable from
+        the <a href="https://git.rtems.org/rtems-docs/tree/">rtems-docs.git</a>
+        Git repository and the <a href="https://devel.rtems.org/">RTEMS Wiki</a>
+        details how to build the documentation.</p>
+	<p>The documentation project is open and welcomes new documents,
+	chapters as well as any fixes no matter how big or small. If you see
+	something wrong please create
+	a <a href="https://devel.rtems.org/query?component=Documentation">ticket</a>
+	and if possible attach a patch.</p>
+	<p>If you need any help please ask on
+	the <a href="mailto:users@rtems.org">RTEMS Users</a> mailing list. You
+	can join the
+	list <a href="https://lists.rtems.org/mailman/listinfo/users">here</a>.</p>
+      </div>
+     </div>
+     <div class="jumbotron">
+      <table class="table rtems-doc-buttons">
+       <tbody>
+        <tr>
+         <td width="10%">
+          <a class="btn btn-success btn-block" role="button" href="branches.html">Active Branches</a>
+	 </td>
+         <td width="10%">
+          <a class="btn btn-primary btn-block" role="button" href="releases.html">All Releases</a>
+	 </td>
+         <td width="10%">
+          <a class="btn btn-info btn-block" role="button" href="all.html">All Documentation</a>
+	 </td>
+        </tr>
+       </tbody>
+      </table>
+     </div>
+    </div>
+    <div class="panel panel-default">
+     <div class="panel-body">
+      <h4>Development</h4>
+      <p>The <b>Master</b> branch of the documentation is the development
+      source. You can access the latest documents below. Click below.</p>
+      <div id="rtems-catalogue-master">
+       No catalogue found.
+      </div>
+     </div>
+    </div>
+    <div class="panel panel-default">
+     <div class="panel-body">
+      <h4>Latest Release</h4>
+      <p>The <b>current release</b> of the documentation
+      is <b>@LATEST_RELEASE@</b>. To access the documentation click below.</p>
+@LATEST_RELEASE_HTML@
+     </div>
+    </div>
+   </div>
+   <!-- Load the catalogues and generate the content -->
+   <script type="text/javascript" src="static/rtems/js/catalogue.js"></script>
+   <script> loadCatalogue("master/catalogue.xml", "master", "master", false); </script>
+@LATEST_RELEASE_SCRIPT@
+   <!-- catalogues-bottom -->

@@ -1,0 +1,27 @@
+   <!-- catalogues-top -->
+   <div class="container">
+    <div id="messages">
+    </div>
+    <div class="content">
+     <div id="content_inner">
+      <p>This page lists  all available documentation packages.</p>
+     </div>
+    </div>
+    <div class="panel panel-default">
+     <div class="panel-body">
+      <h4>Active Branches</h4>
+@BRANCHES@
+    </div>
+    </div>
+    <div class="panel panel-default">
+     <div class="panel-body">
+      <h4>Releases</h4>
+@RELEASES@
+     </div>
+    </div>
+   </div>
+   <!-- Load the catalogues and generate the content -->
+   <script type="text/javascript" src="static/rtems/js/catalogue.js"></script>
+@BRANCHES_SCRIPTS@
+@RELEASES_SCRIPTS@
+   <!-- catalogues-bottom -->

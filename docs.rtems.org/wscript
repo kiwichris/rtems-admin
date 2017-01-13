@@ -1,0 +1,89 @@
+#
+# RTEMS Project Documentation
+#
+
+import configuration
+
+def configure(ctx):
+    pass
+
+def generate_xml(ctx):
+    config = configuration.configuration(ctx, ctx.inputs[0].abspath())
+    config.generate_xml()
+
+def generate_html(ctx):
+    def _preprocess_html(node, items, html):
+        if node.srcpath().startswith('cat-'):
+            for i in items:
+                html = html.replace(i[0], i[1])
+        return html
+
+    config = configuration.configuration(ctx, ctx.inputs[0].abspath())
+    branches, branches_scripts = config.generate_html('branches')
+    releases, releases_scripts = config.generate_html('releases')
+    latest_release_html, latest_release_script = config.generate_html('latest-release')
+    latest_release = config.latest('release')
+    html_items = [('@BRANCHES@',              branches),
+                  ('@BRANCHES_SCRIPTS@',      branches_scripts),
+                  ('@RELEASES@',              releases),
+                  ('@RELEASES_SCRIPTS@',      releases_scripts),
+                  ('@LATEST_RELEASE@',        latest_release),
+                  ('@LATEST_RELEASE_HTML@',   latest_release_html),
+                  ('@LATEST_RELEASE_SCRIPT@', latest_release_script)]
+
+    with open(ctx.outputs[0].abspath(), 'w') as o:
+        for f in ctx.inputs:
+            if f.suffix() == '.html':
+                with open(f.abspath()) as i:
+                    html = i.read()
+                    html = _preprocess_html(f, html_items, html)
+                    o.write(html)
+
+def build(ctx):
+    #
+    # Install the static contect directly.
+    #
+    static_dir = ctx.path.find_dir('static')
+    ctx.install_files('${PREFIX}/static',
+                      static_dir.ant_glob('**'),
+                      cwd = static_dir,
+                      relative_trick = True)
+
+    #
+    # Generate the Release XML cataogues
+    #
+    config = configuration.configuration(ctx, 'configuration.ini')
+    release_xml = ['%s.xml' % r for r in config.get_releases()]
+    ctx(rule = generate_xml,
+        target = release_xml,
+        source = 'configuration.ini')
+    ctx.install_files('${PREFIX}/releases', release_xml)
+
+    #
+    # Specify the top and bottom pages.
+    #
+    top = ['page-top.html',
+           'header.html',
+           'layout-top.html',
+           'menu.html']
+    bottom = ['layout-bottom.html',
+              'footer.html',
+              'page-bottom.html']
+
+    #
+    # Generate the html pages.
+    #
+    ctx(rule = generate_html,
+        target = 'main.index.html',
+        source = ['configuration.ini'] + top + ['cat-main.html'] + bottom)
+    ctx.install_as('${PREFIX}/index.html', 'main.index.html')
+    ctx(rule = generate_html,
+        target = 'branches.html',
+        source = ['configuration.ini'] + top + ['cat-branches.html'] + bottom)
+    ctx(rule = generate_html,
+        target = 'releases.html',
+        source = ['configuration.ini'] + top + ['cat-releases.html'] + bottom)
+    ctx(rule = generate_html,
+        target = 'all.html',
+        source = ['configuration.ini'] + top + ['cat-all.html'] + bottom)
+    ctx.install_files('${PREFIX}', ['branches.html', 'releases.html', 'all.html'])
