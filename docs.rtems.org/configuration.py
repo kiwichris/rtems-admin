@@ -71,11 +71,15 @@ class configuration:
                 self.ctx.fatal('config: section %s not found' % (section))
         return []
 
-    def _comma_list(self, section, label, error = True):
+    def _comma_list(self, section, label, error = True, sort = False):
         items = self._get_item(section, label, error)
         if items is None:
             return []
-        return sorted(set([a.strip() for a in items.split(',')]))
+        items = list(set([a.strip() for a in items.split(',')]))
+        if sort:
+            return sorted(items)
+        else:
+            return items
 
     def _xml_create_doc(self, cat, name, legacy, release, html, pdf):
         doc = cat.createElement('doc')
