@@ -33,7 +33,7 @@ function catalogueFooter() {
 	'    </tr>' +
         '   </tbody>' +
 	'  </table>' +
-	' </dev/>';
+	' </div/>';
 }
 
 function panel_handlers(tag, id, show) {
