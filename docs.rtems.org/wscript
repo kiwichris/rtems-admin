@@ -53,7 +53,7 @@ def build(ctx):
     # Generate the Release XML cataogues
     #
     config = configuration.configuration(ctx, 'configuration.ini')
-    release_xml = ['%s.xml' % r for r in config.get_releases()]
+    release_xml = ['%s.xml' % r for r in config.get_legacy_releases()]
     ctx(rule = generate_xml,
         target = release_xml,
         source = 'configuration.ini')

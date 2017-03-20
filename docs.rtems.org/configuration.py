@@ -51,6 +51,8 @@ class configuration:
              pprint.pformat(self.branches, indent = 1, width = 80) + os.linesep
         s += 'Releases:' + os.linesep + \
              pprint.pformat(self.releases, indent = 1, width = 80) + os.linesep
+        s += 'Legacy:' + os.linesep + \
+             pprint.pformat(self.get_legacy_releases(), indent = 1, width = 80) + os.linesep
         return s
 
     def _get_item(self, section, label, err = True):
@@ -151,19 +153,40 @@ class configuration:
             template = self._get_item(label, 'template', False)
             if template is None:
                 template = label
-            rel['manuals'] = self._comma_list(template, 'manuals')
-            rel['supplements'] = self._comma_list(template, 'supplements', False)
             rel['legacy'] = self._get_item(template, 'legacy', False)
             if rel['legacy'] is None:
                 rel['legacy'] = self._get_item(label, 'legacy', False)
-            rel['index_per_doc'] = self._get_item(template, 'index_per_doc', False)
-            if rel['index_per_doc'] is None:
-                rel['index_per_doc'] = self._get_item(label, 'index_per_doc', False)
-            rel['html'] = self._get_item(label, 'html')
-            rel['pdf'] = self._get_item(label, 'pdf')
-            for d in rel['manuals'] + rel['supplements']:
-                if d.lower() not in self.titles:
-                    self.ctx.fatal('title not found in %s: %s' % (label, d))
+            if rel['legacy'] == 'yes':
+                rel['manuals'] = self._comma_list(template, 'manuals')
+                rel['supplements'] = self._comma_list(template, 'supplements', False)
+                rel['index_per_doc'] = self._get_item(template, 'index_per_doc', False)
+                if rel['index_per_doc'] is None:
+                    rel['index_per_doc'] = self._get_item(label, 'index_per_doc', False)
+                rel['html'] = self._get_item(label, 'html')
+                rel['pdf'] = self._get_item(label, 'pdf')
+                rel['date'] = self._get_item(label, 'date')
+                for d in rel['manuals'] + rel['supplements']:
+                    if d.lower() not in self.titles:
+                        self.ctx.fatal('title not found in %s: %s' % (label, d))
+
+    def get_release(self, release):
+        if self.releases is None:
+            self.ctx.fatal('no configuration loaded')
+        for r in self.releases['releases']:
+            if r[0] == release:
+                return r[0], r[1], self.releases[r[1]]
+        self.ctx.fatal('cannot find release: %s' % (release))
+
+    def is_legacy_releases(self, release):
+        if self.releases is None:
+            self.ctx.fatal('no configuration loaded')
+        name, label, rel = self.get_release(release)
+        return rel['legacy'] == 'yes'
+
+    def get_legacy_releases(self):
+        if self.releases is None:
+            self.ctx.fatal('no configuration loaded')
+        return sorted([r[0] for r in self.releases['releases'] if self.releases[r[1]]['legacy'] == 'yes'])
 
     def get_releases(self):
         if self.releases is None:
@@ -173,15 +196,13 @@ class configuration:
     def generate_xml(self):
         if self.releases is None:
             self.ctx.fatal('no configuration loaded')
-        for r in self.releases['releases']:
-            name = r[0]
-            label = r[1]
-            rel = self.releases[label]
+        for r in self.get_legacy_releases():
+            name, label, rel = self.get_release(r)
 
             cat = xml.Document()
 
             root = cat.createElement('rtems-docs')
-            root.setAttribute('date', today())
+            root.setAttribute('date', rel['date'])
             cat.appendChild(root)
 
             heading = cat.createElement('catalogue')
@@ -221,10 +242,15 @@ class configuration:
             return _tag(release[0])
         def _release_script(release):
             name = release[0]
+            label = release[1]
             tag = _release_tag(release)
+            if self.is_legacy_releases(name):
+                catalogue = "releases/%s.xml" % (name)
+            else:
+                catalogue = "releases/%s/catalogue.xml" % (label)
             return \
-                '<script> loadCatalogue("releases/%s.xml", "releases", "%s", false); </script>\n' \
-                % (name, tag)
+                '<script> loadCatalogue("%s", "releases", "%s", false); </script>\n' \
+                % (catalogue, tag)
 
         def _match_all(tag):
             return True

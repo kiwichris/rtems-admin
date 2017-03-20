@@ -12,8 +12,9 @@ function catalogueHeader(id, title, date) {
 	'    <thead>' +
 	'     <tr id="' + id + '" class="accordion-toggle" data-toggle="collapse"' +
 	'         data-parent="#rtems-catalogue" data-target=".' + id + 'Details">' +
-	'      <th><span class="label label-default">' + date + '</span> ' + title + '</th>\n' +
-	'      <th><i class="indicator glyphicon glyphicon-chevron-up pull-right"></i></th>' +
+	'      <th class="col-sm-2"><span class="label label-default pull-right">' + date + '</span></th>\n' +
+	'      <th class="col-sm-2"><span>' + title + '</span></th>\n' +
+	'      <th width="30px"><i class="indicator glyphicon glyphicon-chevron-up pull-right"></i></th>' +
 	'     </tr>' +
 	'    </thead>' +
 	'    <tr>' +
