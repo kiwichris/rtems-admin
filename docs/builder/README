@@ -1,0 +1,187 @@
+RTEMS Documentation Web Site
+============================
+
+Chris Johns <chrisj@rtems.org>
+20th March 2017
+
+The following documents the RTEMS documentation website.
+
+Jail Access
+-----------
+
+The RTEMS Documentation website is a jail on services2.rtems.org.
+
+Login into services2.rtems.org:
+
+ $ ssh -A chrisj@services2.rtems.org
+
+Change to root to exec a shell in the jali:
+
+ [chrisj@service2 ~]$ jls
+    JID  IP Address      Hostname                      Path
+         1  140.211.10.142  lists.rtems.org            /usr/local/jail/lists.rtems.org
+      2  140.211.10.143  git.rtems.org                 /usr/local/jail/git.rtems.org
+      4  140.211.10.145  www.rtems.org                 /usr/local/jail/www.rtems.org
+      5  140.211.10.146  devel.rtems.org               /usr/local/jail/devel.rtems.org
+      6  140.211.10.150  dispatch.rtems.org            /usr/local/jail/dispatch.rtems.org
+      7  140.211.10.153  qualification.rtems.org       /usr/local/jail/qualification.rtems.org
+      8  140.211.10.144  docs.rtems.org                /usr/local/jail/docs.rtems.org
+ [chrisj@service2 ~]$ su
+ Password:
+ root@service2:/home/chrisj # jexec 8 /bin/sh
+ # su - chrisj
+ \u@docs#
+
+Locations
+---------
+
+The website configuration is:
+
+ /usr/local/etc/apache24/vhost/docs.rtems.org.conf
+
+The web pages are under:
+
+ /data/www/docs.rtems.org
+
+Website
+-------
+
+The website is held in the publically avaliable personal repo called
+`rtems-admin.git`. To update clone the repo:
+
+ # git clone git://git.rtems.org/chrisj/rtems-admin.git
+
+Build the website with the prefix being the location of the website in the
+jail:
+
+ # cd rtems-admin/docs.rtems.org/
+ # ./waf confgure --prefix=/data/www/docs.rtems.org
+ # ./waf
+
+To install the website do a waf install:
+
+ # ./waf install
+
+You can create a test website on a local machine with a suitable prefix. If you
+download and install the various release packages you will be able to loaded
+that documentation.
+
+The website is a mix of preset HTML and XML files called catalogues. A
+catalogue describes a documentation set and the website's Javascript that is
+loaded into user's browsers reads these confguration files from the server and
+dynamically creates the various web pages.
+
+There is specific HTML pieces that detail what is loaded on what pages. This
+hybrid mix lets us generate new documentation tarballso on a per commit basis
+and the website does need to be updated to reflect any local documentation repo
+changes.
+
+The HTML needs to be regenerated when a new release is made or a new release
+branch is created. This is not often and the over head to do is small.
+
+Legacy Documentation
+~~~~~~~~~~~~~~~~~~~~
+
+The lagacy documentation has been fitted into the new website by the website
+providing XML catalogue files for each release. These catalogues are generate
+when the website is built by waf. The configuration of these websites is held
+in configuration.ini. This dats is static and will not change so generating the
+website this way means a consistent user interface for what is old
+documentation.
+
+ReST Documentation
+~~~~~~~~~~~~~~~~~~
+
+The current documentation creates a catalogue and it is the catalogue being
+part of the documentation that gives us the needed flexibility. The
+documentation also contains an HTML coverpage which is based on the
+docs.rtems.org website so the look and feel is consistent.
+
+Configuration
+~~~~~~~~~~~~~
+
+The configuration.ini files is a number of sections. The following describes
+the sections.
+
+The `latest` section defines the latest release and the release key number be
+present in the `releases` section.
+
+The `branches` section describes the branches we are tracking.  The key is the
+name we used on the website and the value is the git label (I think). There
+must be a valid catalogue int the directory `branches/[branch]` where
+`[branch]` is the listed branch on the website. Scripts supporting the website
+manage the uploading of a branch update to the website.
+
+The `releases` section defines all releases where the key is the release label
+and the value is the releases directory. This is the directory in the release
+tarball. If you look at the releases you can see how this has evolved and an
+error or two.
+
+The `titles` section is collection of all titles for the manual parts in all
+the documentation. It is a common location for the naming so we get a
+consistent interface for the user.
+
+The remaining sections define each release. The 4.11 and later releases are
+nothing more than a `legacy` set to `no`. The documentation package's catalogue
+holds all the information.
+
+For legacy documentation you need to create a per release section which is the
+value field in the releases section. You can specify a template which as each
+release stream is the same. The PDF and HTML paths need to because they vary
+and with some errors there is no specific pattern. Finally the manual mix
+varies between major releases so a list of manuals that are present needs to be
+provided.
+
+Website Updating
+----------------
+
+The website is updated by documentation built outside of the docs.rtems.org
+jail. There is no sphinx or Tex installed.
+
+Releases are handled manually by updating the website repo, pulling in the
+changes, building it and then installing it as root. The documentation needs to
+be installed by hand up downloaded the release's tarball and then installing it
+to the releases directory.
+
+Note, 4.11.1 does not have a suitable catalogue so I created one.
+
+Updating branches currently requires 3 machines, a machine to build the
+documentation, the RTEMS FTP server to upload the tarball too and the
+docs.rtems.org machine to download the built tarball and to install the files.
+
+To complicate things more uploading to the FTP server is via SSH and currently
+I am using a key with a passphase. I am considering a key without a passphase
+which is limited to running rsync.
+
+The scripts used are held with this README and are broken down in pieces to
+allow easy testing and also flexibility to handle different path ways into
+machines.
+
+Building and Uploading
+~~~~~~~~~~~~~~~~~~~~~~
+
+The `rtems-docs-upload` is a top level script that loops in a shell with the
+SSH key added to an SSH agent. If a build has built any documentation it is
+uploaded to the RTEMS FTP server. The repo is checked every 10 minutes.
+
+The `rtems-docs-build-branches` builds each branch that has changed and
+packages the changes into a tarball. It also generates a tag file containing
+the branch and hash for each branch in the package.
+
+Downloading and Publishing
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The `rtems-docs-cron` is a top level script that runs every 5 minutes. It
+downloads then publishes any changes.
+
+The `rtems-docs-download` script fetches the tags file from the FTP server and
+checks each tag again the tags currently published. If there is a difference in
+the file package is downloaeded and the branches unpacked.
+
+The script `rtems-docs-unpack-branches` unpacks the new documentation and
+creates a new branches website by selecting the new documentation if the tag's
+hash does not match or the current documentation. A new updated tags file is
+created.
+
+The `rtems-docs-publish` checks for a new branches website and if present it
+removes the current one and copies in the new one.

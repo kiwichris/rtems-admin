@@ -1,0 +1,151 @@
+#! /bin/sh
+#
+# RTEMS Documentation Project
+#
+# Copyright 2017 Chris Johns <chrisj@rtems.org>
+# All rights reserved
+#
+# Public domain
+#
+
+#
+# Exit on error.
+#
+set -e
+
+#
+# Executables
+#
+cp=/bin/cp
+curl=/usr/local/bin/curl
+diff=/usr/bin/diff
+mkdir=/bin/mkdir
+mv=/bin/mv
+tar=/usr/bin/tar
+touch=/usr/bin/touch
+rm=/bin/rm
+
+#
+# Top directory
+#
+top=$PWD
+
+#
+# Directory of the latest build.
+#
+latest=latest
+
+#
+# Directory of the current website build.
+#
+current=current
+
+#
+# Directory of the current website build.
+#
+new=new
+
+#
+# The build tags files.
+#
+latest_tags=${latest}/.tags
+current_tags=${current}/.tags
+new_tags=${new}/.tags
+
+#
+# Branches to build and install as current
+#
+branches="master 4.11"
+
+#
+# Logging.
+#
+log() {
+ echo $* >> ${log_file}
+}
+log_file=${top}/unpack.log
+for f in 4 3 2 1
+do
+ t=`expr $f + 1`
+ ${rm} -f ${top}/unpack-${t}.log
+ if [ -f ${top}/unpack-${f}.log ]; then
+  ${mv} ${top}/unpack-${f}.log ${top}/unpack-${t}.log
+ fi
+done
+if [ -f ${top}/unpack.log ]; then
+ ${mv} ${top}/unpack.log ${top}/unpack-1.log
+fi
+${rm} -rf ${log_file}
+
+# Unpack the latest build and check if the hashes match and if different update
+# the current with the latest.
+
+log "RTEMS Documentation Unpack: " `date`
+
+if [ ! -d ${current} ]; then
+ log "error: no current website found"
+ exit 1
+fi
+
+#
+# Remove any new website if there is one hanging about.
+#
+log ${rm} -rf ${new}
+${rm} -rf ${new}
+log ${mkdir} ${new}
+log ${cp} -r ${current} ${new}
+${cp} -r ${current} ${new}
+
+#
+# Unpack the latest website.
+#
+log ${rm} -rf ${latest}
+${rm} -rf ${latest}
+log ${mkdir} ${latest}
+${mkdir} ${latest}
+cd latest
+ log ${tar} Jxf ../rtems-docs-latest.tar.xz
+ ${tar} Jxf ../rtems-docs-latest.tar.xz
+ cd ..
+
+#
+# if no current tag file create an empty one.
+#
+if [ ! -f ${current_tags} ]; then
+ log touch ${current_tags}
+ ${touch} ${current_tags}
+fi
+
+if [ -f ${latest_tags} ]; then
+ #
+ # Check each branch to see if the tags match.
+ #
+ for b in ${branches}
+ do
+  latest_hash=$(cat ${latest_tags} | grep ${b} | sed -e 's/.* //')
+  current_hash=$(cat ${current_tags} | grep ${b} | sed -e 's/.* //')
+  log "Latest ${b} hash: ${latest_hash}"
+  log "Current ${b} hash: ${current_hash}"
+  if [ ! -z "${latest_hash}" \
+	 -a "${latest_hash}" != "${current_hash}" ]; then
+   src=${latest}/${b}
+   hash=${latest_hash}
+   if [ -d ${src} ]; then
+    log "New: ${b} from ${src} (${hash})"
+    log rm -rf ${new}/${b}
+    rm -rf ${new}/${b}
+    log cp -r ${src} ${new}/${b}
+    ${cp} -r ${src} ${new}/${b}
+    log "Update ${b} in tags"
+    cat ${new_tags} | grep -v ${b} > ${new_tags}.tmp
+    echo "${b} ${hash}" >> ${new_tags}.tmp
+    rm -f ${new_tags}
+    mv ${new_tags}.tmp ${new_tags}
+   fi
+  fi
+ done
+else
+ log "No tags found in the latest docs"
+fi
+
+exit 0

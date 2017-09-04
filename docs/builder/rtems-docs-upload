@@ -1,0 +1,41 @@
+#! /bin/sh
+#
+# RTEMS Documentation Project
+#
+# Copyright 2017 Chris Johns <chrisj@rtems.org>
+# All rights reserved
+#
+# Public domain
+#
+
+#
+# Exit on error.
+#
+set -e
+
+#
+# Executables
+#
+mkdir=/bin/mkdir
+
+#
+# We run where the script is located.
+#
+cd $(dirname $0)
+
+#
+# If no update directory create it.
+#
+if [ ! -d latest ]; then
+ ${mkdir} latest
+fi
+
+cd latest
+ ../rtems-docs-build-branches
+ if [ -f rtems-docs-latest.tar.xz ]; then
+  mv rtems-docs-latest.tar.xz rtems-docs-latest-tags \
+     /data/ftp/pub/rtems/people/chrisj/docs.rtems.org/latest/
+ fi
+ cd ..
+
+exit 0

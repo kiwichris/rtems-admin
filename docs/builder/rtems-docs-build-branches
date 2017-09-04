@@ -1,0 +1,155 @@
+#! /bin/sh
+#
+# RTEMS Documentation Project
+#
+# Copyright 2017 Chris Johns <chrisj@rtems.org>
+# All rights reserved
+#
+# Public domain
+#
+
+#
+# Exit on error.
+#
+set -e
+
+#
+# Executables
+#
+git=/usr/local/bin/git
+
+#
+# Top directory
+#
+top=$PWD
+
+#
+# Directory of builds.
+#
+output=${top}/output
+
+#
+# The build tags files.
+#
+tags=${output}/.tags
+
+#
+# Branches to build and install as current
+#
+branches="master 4.11"
+
+#
+# Branch hash cache
+#
+hash_cache=${top}/git-hash-cache
+
+#
+# Git repository.
+#
+repo=rtems-docs.git
+
+#
+# Update path to include the user installed tools
+#
+PATH=$PATH:/usr/local/bin
+
+#
+# Logging.
+#
+log() {
+ echo $* >> ${log_file}
+}
+log_file=${top}/build.log
+for f in 9 8 7 6 5 4 3 2 1
+do
+ t=`expr $f + 1`
+ rm -f ${top}/build-${t}.log
+ if [ -f ${top}/build-${f}.log ]; then
+  mv ${top}/build-${f}.log ${top}/build-${t}.log
+ fi
+done
+if [ -f ${top}/build.log ]; then
+ mv ${top}/build.log ${top}/build-1.log
+fi
+rm -rf ${log_file}
+
+# Create or clone the repository and then check if a commit has been added on
+# each branch we are interesed in and if there is a commit build the doco and
+# install.
+
+log "RTEMS Documentation Build: " `date`
+
+log rm -f rtems-docs-latest.tar.xz rtems-docs-latest-tags
+rm -f rtems-docs-latest.tar.xz rtems-docs-latest-tags
+
+if [ ! -d ${hash_cache} ]; then
+ mkdir ${hash_cache}
+fi
+
+#
+# If there is no repo create it.
+#
+if [ ! -d ${repo} ]; then
+ log git clone git://git.rtems.org/${repo} ${repo}
+ ${git} clone git://git.rtems.org/${repo} ${repo} >> ${log_file} 2>&1
+fi
+
+#
+# If output exists we have an existing build so clean it first.
+#
+builds=0
+log rm -rf ${output}
+rm -rf ${output}
+
+cd ${repo}
+ #
+ # Fetch any updates and reset the repo to be safe.
+ #
+ log git fetch
+ ${git} fetch >> ${log_file} 2>&1
+ log git reset --hard
+ ${git} reset --hard >> ${log_file} 2>&1
+ for b in ${branches}
+ do
+  log git co ${b}
+  ${git} co ${b} >> ${log_file} 2>&1
+  log git pull
+  ${git} pull >> ${log_file} 2>&1
+  hash=`${git} log -n 1 --pretty=format:"%H"`
+  build=yes
+  if [ -f ${hash_cache}/${b} ]; then
+   if [ ${hash} = `cat ${hash_cache}/${b}` ]; then
+    build=no
+   fi
+  fi
+  log "Building ${b} : ${build}"
+  if [ ${build} = yes ]; then
+   prefix=${output}/${b}
+   log rm -rf ${prefix}
+   rm -rf ${prefix}
+   log mkdir -p ${prefix}
+   mkdir -p ${prefix}
+   log ./waf distclean
+   ./waf distclean >> ${log_file} 2>&1
+   log ./waf configure --pdf --singlehtml --prefix=${prefix}
+   ./waf configure --pdf --singlehtml --prefix=${prefix} >> ${log_file} 2>&1
+   log ./waf build install
+   ./waf build install >> ${log_file} 2>&1
+   echo ${hash} > ${hash_cache}/${b}
+   echo "${b} ${hash}" >> ${tags}
+   builds=$(expr ${builds} + 1)
+  fi
+ done
+ cd ..
+
+if [ ${builds} -gt 0 ]; then
+ cd output
+  #
+  # Package the builds.
+  #
+  tar Jcf ../rtems-docs-latest.tar.xz .tags *
+  cp .tags ../rtems-docs-latest-tags
+  cd ..
+fi
+
+exit 0

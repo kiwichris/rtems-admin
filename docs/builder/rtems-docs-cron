@@ -1,0 +1,24 @@
+#! /bin/sh
+#
+# RTEMS Documentation Project
+#
+# Copyright 2017 Chris Johns <chrisj@rtems.org>
+# All rights reserved
+#
+# Public domain
+#
+
+#
+# Exit on error.
+#
+set -e
+
+#
+# We run where the script is located.
+#
+cd $(dirname $0)
+
+./rtems-docs-download
+./rtems-docs-publish
+
+exit 0
