@@ -246,11 +246,13 @@ class configuration:
             tag = _release_tag(release)
             if self.is_legacy_releases(name):
                 catalogue = "releases/%s.xml" % (name)
+                path = 'releases'
             else:
                 catalogue = "releases/%s/catalogue.xml" % (label)
+                path = 'releases/%s' % (label)
             return \
-                '<script> loadCatalogue("%s", "releases", "%s", false); </script>\n' \
-                % (catalogue, tag)
+                '<script> loadCatalogue("%s", "%s", "%s", false); </script>\n' \
+                % (catalogue, path, tag)
 
         def _match_all(tag):
             return True
@@ -286,7 +288,7 @@ class configuration:
             tag = tagger(d)
             if matcher(tag):
                 html += hindent + '<div id="rtems-catalogue-%s">\n' % (tag)
-                html += hindent + ' No catalogue found.\n'
+                html += hindent + ' <b>%s</b> No catalogue found.\n' % (d[0])
                 html += hindent + '</div>\n'
                 scripts += ' ' * 3 + scripter(d)
 
