@@ -19,6 +19,11 @@ set -e
 mkdir=/bin/mkdir
 
 #
+# Handover path.
+#
+handover=/data/ftp/pub/rtems/people/chrisj/docs.rtems.org/docs
+
+#
 # We run where the script is located.
 #
 cd $(dirname $0)
@@ -33,8 +38,23 @@ fi
 cd latest
  ../rtems-docs-build-branches
  if [ -f rtems-docs-latest.tar.xz ]; then
-  mv rtems-docs-latest.tar.xz rtems-docs-latest-tags \
-     /data/ftp/pub/rtems/people/chrisj/docs.rtems.org/latest/
+  if [ ! -d ${handover} ]; then
+   ${mkdir} -p ${handover}
+  fi
+  #
+  # Empty the directory.
+  #
+  rm -rf ${handover}/*
+  #
+  # Copy to a holding directory on the destination file system and then move
+  # the files. The move will be quick while the move to the file system will be
+  # a slower copy and may result in the otherside looking at a partially copied
+  # file.
+  #
+  ${mkdir} -p ${handover}/hold
+  mv rtems-docs-latest.tar.xz rtems-docs-latest-tags ${handover}/hold/
+  mv ${handover}/hold/* ${handover}/
+  rm -rf ${handover}/hold
  fi
  cd ..
 

@@ -39,9 +39,9 @@ top=$PWD
 wwwdocs=/data/www/docs.rtems.org/branches
 
 #
-# Upload URL.
+# Handover path.
 #
-docsurl=/data/ftp/pub/rtems/people/chrisj/docs.rtems.org/latest
+handover=/data/ftp/pub/rtems/people/chrisj/docs.rtems.org/docs
 
 #
 # Current tags.
@@ -62,31 +62,34 @@ cd latest
  # Download the latest tags and compare the branches in the package with the
  # current tags.
  #
- ${cp} ${docsurl}/rtems-docs-latest-tags rtems-docs-latest-tags
- if [ -f ${current_tags} ]; then
-  exec 3<& 0
-  exec 0< rtems-docs-latest-tags
-  while read line
-  do
-   branch=$(echo ${line} | ${sed} -e 's/[[:space:]].*//g')
-   latest_hash=$(echo ${line} | ${sed} -e 's/.*[[:space:]]//g')
-   current_hash=$(cat ${current_tags} | ${grep} ${branch} | ${sed} -e 's/.*[[:space:]]//g')
-   if [ "${latest_hash}" != "${current_hash}" ]; then
-    update=yes
-   fi
-  done
- else
-  update=yes
+ if [ -f ${handover}/rtems-docs-latest-tags ] && \
+    [ -f ${handover}/rtems-docs-latest.tar.xz ]; then
+  ${cp} ${handover}/rtems-docs-latest-tags rtems-docs-latest-tags
+  if [ -f ${current_tags} ]; then
+   exec 3<& 0
+   exec 0< rtems-docs-latest-tags
+   while read line
+   do
+    branch=$(echo ${line} | ${sed} -e 's/[[:space:]].*//g')
+    latest_hash=$(echo ${line} | ${sed} -e 's/.*[[:space:]]//g')
+    current_hash=$(cat ${current_tags} | ${grep} ${branch} | ${sed} -e 's/.*[[:space:]]//g')
+    if [ "${latest_hash}" != "${current_hash}" ]; then
+     update=yes
+    fi
+   done
+  else
+   update=yes
+  fi
+  if [ ${update} = yes ]; then
+   ${rm} -rf current
+   ${cp} -r /data/www/docs.rtems.org/branches current
+   ${cp} ${handover}/rtems-docs-latest.tar.xz rtems-docs-latest.tar.xz
+   set +e
+    ../rtems-docs-unpack-branches
+   set -e
+  fi
+  ${rm} -f rtems-docs-latest-tags
  fi
- if [ ${update} = yes ]; then
-  ${rm} -rf current
-  ${cp} -r /data/www/docs.rtems.org/branches current
-  ${cp} ${docsurl}/rtems-docs-latest.tar.xz rtems-docs-latest.tar.xz
-  set +e
-   ../rtems-docs-unpack-branches
-  set -e
- fi
- ${rm} -f rtems-docs-latest-tags
  cd ..
 
 exit 0
