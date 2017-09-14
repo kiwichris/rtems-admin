@@ -20,6 +20,16 @@ cp=/bin/cp
 rm=/bin/rm
 
 #
+# We run where the script is located.
+#
+cd $(dirname $0)
+
+#
+# Top directory
+#
+top=$PWD
+
+#
 # The current directory.
 #
 current=/data/www/docs.rtems.org/branches
@@ -27,7 +37,7 @@ current=/data/www/docs.rtems.org/branches
 #
 # The new docs
 #
-new=/usr/home/chrisj/docs/latest/new
+new=${top}/latest/new
 
 #
 # If there is a new directory we have something to publsh.
