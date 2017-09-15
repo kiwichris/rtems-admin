@@ -1,0 +1,183 @@
+#! /bin/sh
+#
+# RTEMS Kernel Project
+#
+# Copyright 2017 Chris Johns <chrisj@rtems.org>
+# All rights reserved
+#
+# Public domain
+#
+
+#
+# Exit on error.
+#
+set -e
+
+#
+# Executables
+#
+git=/usr/local/bin/git
+doxygen=/usr/local/bin/doxygen
+
+#
+# Top directory
+#
+top=$PWD
+
+#
+# Directory of builds.
+#
+output=${top}/output
+
+#
+# The build tags files.
+#
+tags=${output}/.tags
+
+#
+# Branches to build and install as current
+#
+branches="master 4.11"
+
+#
+# Branch hash cache
+#
+hash_cache=${top}/git-hash-cache
+
+#
+# Lastest builds
+#
+latest=${top}/latest
+
+#
+# Git repository.
+#
+repo=rtems.git
+
+#
+# Logging.
+#
+log() {
+ echo $* >> ${log_file}
+}
+log_file=${top}/build.log
+for f in 9 8 7 6 5 4 3 2 1
+do
+ t=`expr $f + 1`
+ rm -f ${top}/build-${t}.log
+ if [ -f ${top}/build-${f}.log ]; then
+  mv ${top}/build-${f}.log ${top}/build-${t}.log
+ fi
+done
+if [ -f ${top}/build.log ]; then
+ mv ${top}/build.log ${top}/build-1.log
+fi
+rm -rf ${log_file}
+
+# Create or clone the repository and then check if a commit has been added on
+# each branch we are interesed in and if there is a commit build the doco and
+# install.
+
+log "RTEMS Kernel Doxygen Build: " `date`
+
+log rm -f rtems-doxygen-latest.tar.xz rtems-doxygen-latest-tags
+rm -f rtems-doxygen-latest.tar.xz rtems-doxygen-latest-tags
+
+if [ ! -d ${hash_cache} ]; then
+ mkdir ${hash_cache}
+fi
+
+#
+# If there is no repo create it.
+#
+if [ ! -d ${repo} ]; then
+ log git clone git://git.rtems.org/${repo} ${repo}
+ ${git} clone git://git.rtems.org/${repo} ${repo} >> ${log_file} 2>&1
+fi
+
+#
+# If output exists we have an existing build so clean it first.
+#
+builds=0
+log rm -rf ${output} ${latest}
+rm -rf ${output} ${latest}
+log mkdir ${latest}
+mkdir ${latest}
+
+log cd ${repo}
+cd ${repo}
+ #
+ # Fetch any updates and reset the repo to be safe.
+ #
+ log git fetch
+ ${git} fetch >> ${log_file} 2>&1
+ log git reset --hard
+ ${git} reset --hard >> ${log_file} 2>&1
+ for b in ${branches}
+ do
+  log git co ${b}
+  ${git} co ${b} >> ${log_file} 2>&1
+  log git pull
+  ${git} pull >> ${log_file} 2>&1
+  hash=`${git} log -n 1 --pretty=format:"%H"`
+  build=yes
+  if [ -f ${hash_cache}/${b} ]; then
+   if [ ${hash} = `cat ${hash_cache}/${b}` ]; then
+    build=no
+   fi
+  fi
+  log "Building ${b} : ${build}"
+  if [ ${build} = yes ]; then
+   cwd=$PWD
+   prefix=${output}/${b}
+   log rm -rf ${prefix}
+   rm -rf ${prefix}
+   log mkdir -p ${prefix}
+   mkdir -p ${prefix}
+   log cd ${prefix}
+   cd ${prefix}
+    log "Creating: Doxyfile"
+    top_srcdir=$(echo ${top}/${repo}/cpukit | sed -e 's/\//\\\//g')
+    perl=$(which perl | sed -e 's/\//\\\//g')
+    cat ${top}/${repo}/cpukit/Doxyfile.in | \
+        sed -e "s/@PACKAGE_VERSION@/${release}/g" \
+            -e "s/@top_srcdir@/${top_srcdir}/g" \
+            -e "s/@PERL@/${perl}/g" \
+            -e "s/^INPUT[[:space:]].*=.*$/INPUT = ${top_srcdir}/g" \
+            -e "s/^FULL_PATH_NAMES[[:space:]].*=.*$/FULL_PATH_NAMES = NO/g" \
+            -e "s/^GENERATE_LATEX[[:space:]].*=.*$/GENERATE_LATEX = no/g" \
+            -e "s/^HAVE_DOT[[:blank:]]/DOT_NUM_THREADS = 1\\
+        HAVE_DOT /g"> Doxyfile
+    log "Building: Doxyfile in ${prefix}"
+    ${doxygen} Doxyfile >> ${log_file} 2>&1
+    log cd ..
+    cd ..
+   log rm -rf tmp
+   rm -rf tmp
+   log mv ${b} tmp
+   mv ${b} tmp
+   log mv tmp/cpukit_doxy/html ${b}
+   mv tmp/cpukit_doxy/html ${b}
+   log rm -rf tmp
+   rm -rf tmp
+   log cd ${cwd}
+   cd ${cwd}
+   echo ${hash} > ${hash_cache}/${b}
+   echo "${b} ${hash}" >> ${tags}
+   builds=$(expr ${builds} + 1)
+  fi
+ done
+ log cd ${top}
+ cd ${top}
+
+if [ ${builds} -gt 0 ]; then
+ cd output
+  #
+  # Package the builds.
+  #
+  tar zcf ../rtems-doxygen-latest.tar.gz .tags *
+  cp .tags ../rtems-doxygen-latest-tags
+  cd .
+fi
+
+exit 0
