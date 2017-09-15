@@ -1,0 +1,51 @@
+#! /bin/sh
+#
+# RTEMS Documentation Project
+#
+# Copyright 2017 Chris Johns <chrisj@rtems.org>
+# All rights reserved
+#
+# Public domain
+#
+
+#
+# Exit on error.
+#
+set -e
+
+#
+# Executables
+#
+cp=/bin/cp
+rm=/bin/rm
+
+#
+# We run where the script is located.
+#
+cd $(dirname $0)
+
+#
+# Top directory
+#
+top=$PWD
+
+#
+# The current directory.
+#
+current=/data/www/docs.rtems.org/doxygen/branches
+
+#
+# The new docs
+#
+new=${top}/latest/new
+
+#
+# If there is a new directory we have something to publsh.
+#
+if [ -d ${new} ]; then
+ ${rm} -rf ${current}.tags ${current}/*
+ ${cp} -r ${new}/.tags ${new}/* ${current}/.
+ ${rm} -rf ${new}
+fi
+
+exit 0

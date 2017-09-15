@@ -1,0 +1,100 @@
+#! /bin/sh
+#
+# RTEMS Documentation Project
+#
+# Copyright 2017 Chris Johns <chrisj@rtems.org>
+# All rights reserved
+#
+# Public domain
+#
+
+#
+# Exit on error.
+#
+set -e
+
+#
+# Executables
+#
+cp=/bin/cp
+diff=/usr/bin/diff
+grep=/usr/bin/grep
+mkdir=/bin/mkdir
+rm=/bin/rm
+sed=/usr/bin/sed
+
+#
+# We run where the script is located.
+#
+cd $(dirname $0)
+
+#
+# Top directory
+#
+top=$PWD
+
+#
+# The current directory.
+#
+wwwdocs=/data/www/docs.rtems.org/doxygen/branches
+
+#
+# Handover path.
+#
+handover=/data/ftp/pub/rtems/people/chrisj/docs.rtems.org/doxygen
+
+#
+# Latest files.
+#
+latest_tags=rtems-doxygen-latest-tags
+latest_doxygen=rtems-doxygen-latest.tar.gz
+
+#
+# Current tags.
+#
+current_tags=${wwwdocs}/.tags
+
+#
+# If no update directory create it.
+#
+if [ ! -d latest ]; then
+ ${rm} -rf latest
+ ${mkdir} latest
+fi
+
+cd latest
+ update=no
+ #
+ # Download the latest tags and compare the branches in the package with the
+ # current tags.
+ #
+ if [ -f ${handover}/${latest_tags} ] && [ -f ${handover}/${latest_doxygen} ]; then
+  ${cp} ${handover}/${latest_tags} ${latest_tags}
+  if [ -f ${current_tags} ]; then
+   exec 3<& 0
+   exec 0< ${latest_tags}
+   while read line
+   do
+    branch=$(echo ${line} | ${sed} -e 's/[[:space:]].*//g')
+    latest_hash=$(echo ${line} | ${sed} -e 's/.*[[:space:]]//g')
+    current_hash=$(cat ${current_tags} | ${grep} ${branch} | ${sed} -e 's/.*[[:space:]]//g')
+    if [ "${latest_hash}" != "${current_hash}" ]; then
+     update=yes
+    fi
+   done
+  else
+   update=yes
+  fi
+  if [ ${update} = yes ]; then
+   ${rm} -rf current
+   ${cp} -r ${wwwdocs} current
+   ${cp} ${handover}/${latest_doxygen} ${latest_doxygen}
+   set +e
+    ../rtems-doxygen-unpack-branches
+   set -e
+  fi
+  ${rm} -f ${latest_tags}
+ fi
+ cd ..
+
+exit 0
