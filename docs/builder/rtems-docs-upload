@@ -37,7 +37,7 @@ fi
 
 cd latest
  ../rtems-docs-build-branches
- if [ -f rtems-docs-latest.tar.xz ]; then
+ if [ -f rtems-docs-latest.tar.xz ] && [ -f rtems-docs-latest-tags ]; then
   if [ ! -d ${handover} ]; then
    ${mkdir} -p ${handover}
   fi
