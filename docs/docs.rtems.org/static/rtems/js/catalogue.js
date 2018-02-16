@@ -37,6 +37,8 @@ function catalogueFooter() {
 	' </div/>';
 }
 
+
+
 function panel_handlers(tag, id, show) {
     $('#' + id + '1').on('shown.bs.collapse', function () {
 	$("#" + id + " i.indicator").removeClass("glyphicon-chevron-up").addClass("glyphicon-chevron-down");
@@ -92,7 +94,7 @@ function paintCatalogue(xml, path, tag, doxygen, show) {
     });
     if (doxygen == true) {
 	table += '<tr>\n';
-	table += '<td><a href="doxygen/' + path + '">RTEMS CPU Kit Doxygen</a></td>\n';
+	table += '<td><a href="doxygen/' + path.replace('docs', 'doxygen') + '">RTEMS CPU Kit Doxygen</a></td>\n';
 	table += empty;
 	table += empty;
 	table += '</tr>\n';
