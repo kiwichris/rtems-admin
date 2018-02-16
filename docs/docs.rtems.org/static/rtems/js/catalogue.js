@@ -102,8 +102,8 @@ function paintCatalogue(xml, path, tag, doxygen, show) {
     panel_handlers(tag, id, show);
 }
 
-function loadCatalogue(catalogue, path, tag, show) {
+function loadCatalogue(catalogue, path, tag, doxygen, show) {
     var f = $.get(catalogue, function(xml) {
-	paintCatalogue(xml, path, tag, show);
+	paintCatalogue(xml, path, tag, doxygen, show);
     }, 'xml');
 }
