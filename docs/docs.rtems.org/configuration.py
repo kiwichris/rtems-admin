@@ -168,6 +168,10 @@ class configuration:
                 for d in rel['manuals'] + rel['supplements']:
                     if d.lower() not in self.titles:
                         self.ctx.fatal('title not found in %s: %s' % (label, d))
+            else:
+                rel['doxygen'] = self._get_item(template, 'doxygen', False)
+                if rel['doxygen'] is None:
+                    rel['doxygen'] = 'no'
 
     def get_release(self, release):
         if self.releases is None:
@@ -177,11 +181,19 @@ class configuration:
                 return r[0], r[1], self.releases[r[1]]
         self.ctx.fatal('cannot find release: %s' % (release))
 
-    def is_legacy_releases(self, release):
+    def is_legacy_release(self, release):
         if self.releases is None:
             self.ctx.fatal('no configuration loaded')
         name, label, rel = self.get_release(release)
         return rel['legacy'] == 'yes'
+
+    def is_doxygen_release(self, release):
+        if self.releases is None:
+            self.ctx.fatal('no configuration loaded')
+        name, label, rel = self.get_release(release)
+        if not 'doxygen' in rel:
+            return False
+        return rel['doxygen'] == 'yes'
 
     def get_legacy_releases(self):
         if self.releases is None:
@@ -235,7 +247,7 @@ class configuration:
             path = branch[1]
             tag = _branch_tag(branch)
             return \
-                '<script> loadCatalogue("branches/%s/catalogue.xml", "branches/%s", "%s", false); </script>\n' \
+                '<script> loadCatalogue("branches/%s/catalogue.xml", "branches/%s", "%s", true, false); </script>\n' \
                 % (path, path, tag)
 
         def _release_tag(release):
@@ -244,15 +256,19 @@ class configuration:
             name = release[0]
             label = release[1]
             tag = _release_tag(release)
-            if self.is_legacy_releases(name):
+            if self.is_legacy_release(name):
                 catalogue = "releases/%s.xml" % (name)
                 path = 'releases'
             else:
                 catalogue = "releases/%s/catalogue.xml" % (label)
                 path = 'releases/%s' % (label)
+            if self.is_doxygen_release(name):
+                doxygen = "true"
+            else:
+                doxygen = "false"
             return \
-                '<script> loadCatalogue("%s", "%s", "%s", false); </script>\n' \
-                % (catalogue, path, tag)
+                '<script> loadCatalogue("%s", "%s", "%s", %s, false); </script>\n' \
+                % (catalogue, path, tag, doxygen)
 
         def _match_all(tag):
             return True

@@ -50,7 +50,7 @@ function panel_handlers(tag, id, show) {
 	$('#' + id + '1').collapse('show');
 }
 
-function paintCatalogue(xml, path, tag, show) {
+function paintCatalogue(xml, path, tag, doxygen, show) {
     var el_cat = $('#rtems-catalogue-' + tag);
     if (path.slice(-1) != '/')
 	path = path + '/';
@@ -64,6 +64,7 @@ function paintCatalogue(xml, path, tag, show) {
     var title = $(docs).find('catalogue');
     var id = title.text().replace(/\.| |\(|\)|\[|\]/g, '_');
     var table = catalogueHeader(id, title.text(), date);
+    var empty = '<td></a></td>\n';
     $(docs).find('doc').each(function() {
 	var name = $(this).find('name').text();
 	var title = $(this).find('title').text();
@@ -72,7 +73,6 @@ function paintCatalogue(xml, path, tag, show) {
 	var html = $(this).find('html').text();
 	var pdf = $(this).find('pdf').text();
 	var singlehtml = $(this).find('singlehtml').text();
-	var empty = '<td></a></td>\n';
 	table += '<tr>\n';
 	if (html)
 	    table += '<td><a href="' + path + html + '">' + title + '</a></td>\n';
@@ -90,6 +90,13 @@ function paintCatalogue(xml, path, tag, show) {
 	    table += empty;
 	table += '</tr>\n';
     });
+    if (doxygen == true) {
+	table += '<tr>\n';
+	table += '<td><a href="doxygen/' + path + '">RTEMS CPU Kit Doxygen</a></td>\n';
+	table += empty;
+	table += empty;
+	table += '</tr>\n';
+    }
     table += catalogueFooter();
     el_cat.html(table);
     panel_handlers(tag, id, show);
