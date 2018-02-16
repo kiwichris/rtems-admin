@@ -244,11 +244,16 @@ class configuration:
         def _branch_tag(branch):
             return _tag(branch[0])
         def _branch_script(branch):
+            name = branch[0]
             path = branch[1]
             tag = _branch_tag(branch)
+            if name == 'master':
+                show = 'true'
+            else:
+                show = 'false'
             return \
-                '<script> loadCatalogue("branches/%s/catalogue.xml", "branches/%s", "%s", true, false); </script>\n' \
-                % (path, path, tag)
+                '<script> loadCatalogue("branches/%s/catalogue.xml", "branches/%s", "%s", true, %s); </script>\n' \
+                % (path, path, tag, show)
 
         def _release_tag(release):
             return _tag(release[0])
