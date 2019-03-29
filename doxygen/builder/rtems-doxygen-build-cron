@@ -18,6 +18,19 @@ set -e
 #
 cd $(dirname $0)
 
-./rtems-doxygen-upload
+#
+# The lock file.
+#
+LOCK=.cron-lock
+
+#
+# Trap to remove the lock file/
+#
+trap "rm -f ${LOCK}" EXIT
+
+if [ ! -f .cron-lock ]; then
+ touch ${LOCK}
+ ./rtems-doxygen-upload
+fi
 
 exit 0

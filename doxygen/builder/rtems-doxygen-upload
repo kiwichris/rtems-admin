@@ -36,7 +36,7 @@ if [ ! -d latest ]; then
 fi
 
 cd latest
- #../rtems-doxygen-build-branches
+ ../rtems-doxygen-build-branches
  if [ -f rtems-doxygen-latest.tar.gz ] && [ -f rtems-doxygen-latest-tags ]; then
   if [ ! -d ${handover} ]; then
    ${mkdir} -p ${handover}

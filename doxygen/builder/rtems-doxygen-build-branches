@@ -2,7 +2,7 @@
 #
 # RTEMS Kernel Project
 #
-# Copyright 2017 Chris Johns <chrisj@rtems.org>
+# Copyright 2017-2019 Chris Johns <chrisj@rtems.org>
 # All rights reserved
 #
 # Public domain
@@ -134,32 +134,44 @@ cd ${repo}
    rm -rf ${prefix}
    log mkdir -p ${prefix}
    mkdir -p ${prefix}
-   log cd ${prefix}
-   cd ${prefix}
-    log "Creating: Doxyfile"
-    top_srcdir=$(echo ${top}/${repo}/cpukit | sed -e 's/\//\\\//g')
-    perl=$(which perl | sed -e 's/\//\\\//g')
-    cat ${top}/${repo}/cpukit/Doxyfile.in | \
-        sed -e "s/@PACKAGE_VERSION@/${release}/g" \
-            -e "s/@top_srcdir@/${top_srcdir}/g" \
-            -e "s/@PERL@/${perl}/g" \
-            -e "s/^INPUT[[:space:]].*=.*$/INPUT = ${top_srcdir}/g" \
-            -e "s/^FULL_PATH_NAMES[[:space:]].*=.*$/FULL_PATH_NAMES = NO/g" \
-            -e "s/^GENERATE_LATEX[[:space:]].*=.*$/GENERATE_LATEX = no/g" \
-            -e "s/^HAVE_DOT[[:blank:]]/DOT_NUM_THREADS = 1\\
-        HAVE_DOT /g"> Doxyfile
-    log "Building: Doxyfile in ${prefix}"
-    ${doxygen} Doxyfile >> ${log_file} 2>&1
-    log cd ..
-    cd ..
-   log rm -rf tmp
-   rm -rf tmp
-   log mv ${b} tmp
-   mv ${b} tmp
-   log mv tmp/cpukit_doxy/html ${b}
-   mv tmp/cpukit_doxy/html ${b}
-   log rm -rf tmp
-   rm -rf tmp
+   # Pre-5 building
+   if [ -f ${top}/${repo}/cpukit/Doxyfile.in ]; then
+    log cd ${prefix}
+    cd ${prefix}
+     log "Creating: Doxyfile"
+     top_srcdir=$(echo ${top}/${repo}/cpukit | sed -e 's/\//\\\//g')
+     perl=$(which perl | sed -e 's/\//\\\//g')
+     cat ${top}/${repo}/cpukit/Doxyfile.in | \
+         sed -e "s/@PACKAGE_VERSION@/${release}/g" \
+             -e "s/@top_srcdir@/${top_srcdir}/g" \
+             -e "s/@PERL@/${perl}/g" \
+             -e "s/^INPUT[[:space:]].*=.*$/INPUT = ${top_srcdir}/g" \
+             -e "s/^FULL_PATH_NAMES[[:space:]].*=.*$/FULL_PATH_NAMES = NO/g" \
+             -e "s/^GENERATE_LATEX[[:space:]].*=.*$/GENERATE_LATEX = no/g" \
+             -e "s/^HAVE_DOT[[:blank:]]/DOT_NUM_THREADS = 1\\
+         HAVE_DOT /g"> Doxyfile
+     log "Building: Doxyfile in ${prefix}"
+     ${doxygen} Doxyfile >> ${log_file} 2>&1
+     log cd ..
+     cd ..
+    log rm -rf tmp
+    rm -rf tmp
+    log mv ${b} tmp
+    mv ${b} tmp
+    log mv tmp/cpukit_doxy/html ${b}
+    mv tmp/cpukit_doxy/html ${b}
+    log rm -rf tmp
+    rm -rf tmp
+   else
+    log cd ${top}/${repo}
+    cd ${top}/${repo}
+     log rm -rf doc
+     rm -rf doc
+     log "Building: Doxyfile in ${prefix}"
+     ${doxygen} Doxyfile >> ${log_file} 2>&1
+     log mv doc/* ${prefix}/
+     mv doc/* ${prefix}/
+   fi
    log cd ${cwd}
    cd ${cwd}
    echo ${hash} > ${hash_cache}/${b}

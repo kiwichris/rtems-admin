@@ -139,8 +139,13 @@ if [ -f ${latest_tags} ]; then
     log "New: ${b} from ${src} (${hash})"
     log rm -rf ${new}/${b}
     rm -rf ${new}/${b}
-    log cp -r ${src} ${new}/${b}
-    ${cp} -r ${src} ${new}/${b}
+    if [ -d ${src}/html ]; then
+     log cp -r ${src}/html/. ${new}/${b}
+     ${cp} -r ${src}/html/. ${new}/${b}
+    else
+     log cp -r ${src} ${new}/${b}
+     ${cp} -r ${src} ${new}/${b}
+    fi
     log "Update ${b} in tags"
     cat ${new_tags} | grep -v ${b} > ${new_tags}.tmp
     echo "${b} ${hash}" >> ${new_tags}.tmp

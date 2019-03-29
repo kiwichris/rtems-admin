@@ -44,7 +44,8 @@ new=${top}/latest/new
 #
 if [ -d ${new} ]; then
  ${rm} -rf ${current}.tags ${current}/*
- ${cp} -r ${new}/.tags ${new}/* ${current}/.
+ ${cp} -r ${new}/.tags ${current}/.
+ ${cp} -r ${new}/. ${current}/.
  ${rm} -rf ${new}
 fi
 
