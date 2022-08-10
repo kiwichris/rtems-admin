@@ -227,7 +227,7 @@ class configuration:
                     html = rel['html'] + '/' + m + '/index.html'
                 else:
                     html = rel['html'] + '/' + m + '.html'
-                pdf = rel['pdf'] + '/' + m + '.pdf'
+                pdf = rel['pdf'] + '/' + m + '-' + r + '.pdf'
                 legacy = rel['legacy']
                 doc = self._xml_create_doc(cat, m, legacy, name, html, pdf)
                 root.appendChild(doc)
