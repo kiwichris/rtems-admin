@@ -1,0 +1,84 @@
+#! /usr/bin/env python
+#
+# RTEMS Tools Project (http://www.rtems.org/)
+# Copyright 2022 Chris Johns (chris@contemporary.software)
+# All rights reserved.
+#
+# This file is part of the RTEMS Tools package in 'rtems-tools'.
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are met:
+#
+# 1. Redistributions of source code must retain the above copyright notice,
+# this list of conditions and the following disclaimer.
+#
+# 2. Redistributions in binary form must reproduce the above copyright notice,
+# this list of conditions and the following disclaimer in the documentation
+# and/or other materials provided with the distribution.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+# ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+# LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+# CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+# SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+# INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+# CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+# ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+# POSSIBILITY OF SUCH DAMAGE.
+#
+
+import argparse
+import sys
+
+
+if __name__ == '__main__':
+
+    args = argparse.ArgumentParser()
+
+    args.add_argument('-r',
+                      '--release',
+                      required=True,
+                      dest='release',
+                      help='The release to report',
+                      type=str,
+                      default=None)
+    args.add_argument('-f',
+                      '--force',
+                      dest='force',
+                      help='Force downloading of tickets',
+                      action='store_true')
+    args.add_argument('-c',
+                      '--cache',
+                      dest='cache',
+                      help='Cache file base name of ticket data, one per milestone',
+                      type=str,
+                      default=None)
+    args.add_argument('-o',
+                      '--output',
+                      required=True,
+                      dest='output',
+                      help='Output file',
+                      type=str,
+                      default=None)
+    args.add_argument('-N',
+                      '--notes',
+                      dest='notes',
+                      help='Top-level, manually-written release notes',
+                      default=None)
+
+    opts = args.parse_args()
+
+    if opts.cache is not None:
+        cache = opts.cache
+    else:
+        cache = '.rng-cache'
+
+    ticks = collect_tickets(release=opts.release, cache=cache, force=opts.force)
+    contents = generate(ticks, opts.release, opts.notes)
+
+    print('Writing ' + opts.output)
+
+    with open(opts.output, 'w') as f:
+        f.write(contents)
