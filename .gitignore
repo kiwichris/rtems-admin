@@ -2,3 +2,5 @@ build
 .waf*
 .lock*
 *.pyc
+cache
+data
