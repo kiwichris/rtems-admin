@@ -1,7 +1,7 @@
 #! /usr/bin/env python
 #
 # RTEMS Tools Project (http://www.rtems.org/)
-# Copyright 2022 Chris Johns (chris@contemporary.software)
+# Copyright 2024 Chris Johns (chris@contemporary.software)
 # All rights reserved.
 #
 # This file is part of the RTEMS Tools package in 'rtems-tools'.
@@ -30,55 +30,173 @@
 #
 
 import argparse
+import datetime
+import json
+import os
+import os.path
 import sys
+
+import builds
+
+
+def _archive_start_date(sdate):
+    sds = sdate.split('-')
+    if len(sds) != 2:
+        raise ValueError('invalid start date: ' + sdate)
+    try:
+        year = int(sds[0], 10)
+        month = int(sds[1], 10)
+    except:
+        raise ValueError('invalid start date: ' + sdate)
+    return year, month
+
+
+def _archive_months(archives):
+    return sorted(
+        list(archives),
+        key=lambda archive: datetime.datetime(archives[archive]['year'],
+                                              archives[archive]['month'], 1))
+
+
+def _year_months(archives):
+    years = {}
+    for archive in _archive_months(archives):
+        year = builds.label_year(archive)
+        if year not in years:
+            years[year] = []
+        years[year].append(archive)
+    return years
+
+
+def _output_json(output, filename, data):
+    print('Outputing ....', filename)
+    with open(os.path.join(output, filename), 'w') as out:
+        json.dump(data, out, indent=2)
+
+
+def _output(output, analysis):
+    if not os.path.exists(output):
+        os.mkdir(output)
+    _output_json(output, 'summary.json', analysis['summary'])
+
+
+def _analyze_summary(results):
+    summary = {'totals': {}, 'years': {}, 'hosts': {}, 'archs': {}}
+    summary['totals']['builds'] = results.builds_count()
+    summary['totals']['passes'] = results.passes_count()
+    summary['totals']['fails'] = results.fails_count()
+    summary['totals']['hosts'] = results.hosts()
+    summary['totals']['archs'] = results.rtems_archs()
+    for year in results.years:
+        summary['years'][year] = {
+            'totals': {},
+            'months': {},
+            'hosts': {},
+            'rtems-archs': {}
+        }
+        sy = summary['years'][year]
+        sy['totals']['builds'] = results.builds_count(year=year)
+        sy['totals']['passes'] = results.passes_count(year=year)
+        sy['totals']['fails'] = results.fails_count(year=year)
+        sy['totals']['hosts'] = results.hosts(year=year)
+        sy['totals']['archs'] = results.rtems_archs(year=year)
+        for month in results.years[year]:
+            if month is None:
+                continue
+            sy['months'][month.month] = {}
+            sm = sy['months'][month.month]
+            sm['passes'] = results.passes_count(year=year, month=month.month)
+            sm['fails'] = results.fails_count(year=year, month=month.month)
+            sm['hosts'] = results.hosts(year=year, month=month.month)
+            sm['archs'] = results.rtems_archs(year=year, month=month.month)
+    return summary
 
 
 if __name__ == '__main__':
 
+    raise_error = True
+
     args = argparse.ArgumentParser()
 
-    args.add_argument('-r',
-                      '--release',
-                      required=True,
-                      dest='release',
-                      help='The release to report',
-                      type=str,
-                      default=None)
     args.add_argument('-f',
                       '--force',
-                      dest='force',
-                      help='Force downloading of tickets',
+                      dest='force_download',
+                      help='Force downloading of email archive',
                       action='store_true')
     args.add_argument('-c',
                       '--cache',
                       dest='cache',
-                      help='Cache file base name of ticket data, one per milestone',
+                      help='Cache ditrectory for mailing list data ' + \
+                      '(default: %(default)s)',
                       type=str,
-                      default=None)
+                      default='cache')
+    args.add_argument('-d',
+                      '--download',
+                      required=False,
+                      dest='download',
+                      help='Download all months',
+                      action='store_true')
+    args.add_argument('-s',
+                      '--start-date',
+                      required=False,
+                      dest='start_date',
+                      help='Start date as YYYY-MM (default: %(default)s)',
+                      type=str,
+                      default='2014-08')
     args.add_argument('-o',
                       '--output',
-                      required=True,
+                      required=False,
                       dest='output',
-                      help='Output file',
+                      help='Output directory (default: %(default)s)',
                       type=str,
-                      default=None)
-    args.add_argument('-N',
-                      '--notes',
-                      dest='notes',
-                      help='Top-level, manually-written release notes',
-                      default=None)
+                      default='data')
 
     opts = args.parse_args()
 
-    if opts.cache is not None:
-        cache = opts.cache
-    else:
-        cache = '.rng-cache'
+    ec = 0
 
-    ticks = collect_tickets(release=opts.release, cache=cache, force=opts.force)
-    contents = generate(ticks, opts.release, opts.notes)
+    try:
+        start_year, start_month = _archive_start_date(opts.start_date)
 
-    print('Writing ' + opts.output)
+        build_list = builds.lists(opts.cache, start_year, start_month)
 
-    with open(opts.output, 'w') as f:
-        f.write(contents)
+        if opts.download:
+            build_list.download(opts.force_download)
+            build_list.save()
+
+        archives = {}
+
+        for archive in build_list:
+            email = builds.emails(archive, build_list.file_name(archive))
+            email.parse()
+            results = email.build_results()
+            if results.has_builds():
+                archives[archive] = {
+                    'label': archive,
+                    'year': builds.archive_year(archive),
+                    'month': builds.archive_month(archive),
+                    'email': email,
+                    'results': results
+                }
+
+        results = builds.year_results()
+
+        for arc in archives:
+            archive = archives[arc]
+            results.add(archive['year'], archive['month'], archive['results'])
+            print(arc + '.' * (20 - len(arc)) + ' ' + str(archive['results']))
+
+        analysis = {}
+        analysis['summary'] = _analyze_summary(results)
+
+        _output(opts.output, analysis)
+
+    except Exception as e:
+        if raise_error:
+            raise
+        print('error: ' + str(e), file=sys.stderr)
+    except KeyboardInterrupt:
+        print('warning: abort: user terminated', file=sys.stderr)
+        ec = 1
+
+    sys.exit(ec)
